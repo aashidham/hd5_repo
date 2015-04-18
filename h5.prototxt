@@ -1,0 +1,90 @@
+# ChipSeqDL1 is our first model for all 8 marks
+test_interval: 100
+test_iter: 20
+# The base learning rate, momentum and the weight decay of the network.
+base_lr: 0.0001
+momentum: 0.9 #momentum: 0.4
+#weight_decay: 0.0005
+# The learning rate policy
+lr_policy: "inv"
+gamma: 0.1 #gamma: 0.0001
+#power: 0.6
+stepsize: 1000 #added later -- when learning rate changes
+# Display every 100 iterations
+display: 100
+# The maximum number of iterations
+max_iter: 1000 #max_iter: 200
+# snapshot intermediate results
+snapshot: 100
+snapshot_prefix: "snapshots/"
+# Set a random_seed for repeatable results.
+# (For results that vary due to random initialization, comment out the below
+# line, or set to a negative integer -- e.g. "random_seed: -1")
+random_seed: 1201
+
+solver_mode: GPU
+device_id: 2
+
+test_state: { stage: "test-on-valid-set"}
+
+net_param {
+name: "h5"
+layers {
+  name: "data"
+  type: HDF5_DATA
+  hdf5_data_param {
+	source: "hd5_train.txt"
+	batch_size: 1000
+  }
+  top: "data"
+  top: "label"
+  include: { 
+  	phase: TRAIN 
+  }
+}
+layers {
+  name: "data"
+  type: HDF5_DATA
+  hdf5_data_param {
+	source: "hd5_test.txt"
+	batch_size: 1000
+  }
+  top: "data"
+  top: "label"
+  include: { 
+  	phase: TEST 
+  	stage: "test-on-valid-set"
+  }
+}
+layers{
+	name: "flatten"
+	type: FLATTEN
+	bottom: "data"
+	top: "flatten"
+}
+
+layers {
+  name: "ip1"
+  type: INNER_PRODUCT
+  blobs_lr: 1.
+  blobs_lr: 2.
+  inner_product_param {
+	num_output: 1
+	weight_filler {
+	  type: "xavier"
+	}
+	bias_filler {
+	  type: "constant"
+	}
+  }
+  bottom: "flatten"
+  top: "ip1"
+}
+    layers {
+      name: "loss"
+      type: EUCLIDEAN_LOSS
+      bottom: "ip1"
+      bottom: "label"
+      top: "loss"
+    }
+}
